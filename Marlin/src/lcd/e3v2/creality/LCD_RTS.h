@@ -3,7 +3,7 @@
 
 #include "../../../sd/cardreader.h"
 #include "string.h"
-#include <arduino.h>
+#include <Arduino.h>
 
 #include "../../../inc/MarlinConfig.h"
 
