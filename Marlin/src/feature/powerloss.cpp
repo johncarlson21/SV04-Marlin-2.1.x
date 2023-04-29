@@ -580,12 +580,12 @@ void PrintJobRecovery::resume() {
       dualXPrintingModeStatus = 0;
     }
 
-    gcode.process_subcommands_now(PSTR("G1 E3 F3000"));
+    gcode.process_subcommands_now(F("G1 E3 F3000"));
 
     save_dual_x_carriage_mode = dualXPrintingModeStatus;
     if(save_dual_x_carriage_mode == 1)
     {
-      gcode.process_subcommands_now(PSTR("M605 S1"));
+      gcode.process_subcommands_now(F("M605 S1"));
       if(info.active_extruder == 0)
       {
         sprintf_P(cmd, PSTR("T%i"), info.active_extruder);
