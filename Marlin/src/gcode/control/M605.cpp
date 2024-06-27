@@ -62,7 +62,7 @@
    *             then followed by "M605 S3" to initiate mirrored movement.
    *
    *   M605 S4 : (FULL_CONTROL) (Single Mode 2 for Sovol SV04) This is for host control so the code will know it has to use the single mode 2
-   * 
+   *
    *    M605 W  : IDEX What? command.
    *
    *    Note: the X axis should be homed after changing Dual X-carriage mode.
@@ -70,58 +70,51 @@
   void GcodeSuite::M605() {
     planner.synchronize();
 
-    if (parser.seenval('S')) {
-      const DualXMode previous_mode = dual_x_carriage_mode;
+    if (parser.seenval('S') || !parser.seenval('W')) {
+      const DualXMode previous_mode = (DualXMode)dualXPrintingModeStatus;
 
-      dual_x_carriage_mode = (DualXMode)parser.value_byte();
-      idex_set_mirrored_mode(false);
+      if (parser.seenval('S'))
+        dual_x_carriage_mode = (DualXMode)parser.value_byte();
+      else
+        dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
 
-      SERIAL_ECHOLNPGM("dualXPrintingModeStatus M605: ", dualXPrintingModeStatus);
-      SERIAL_ECHOLNPGM("dual_x_carriage_mode: ", dual_x_carriage_mode);
+      if (dual_x_carriage_mode > DXC_SINGLE_2) {
+        SERIAL_ERROR_MSG("M605 out of range S<0-4>");
+        dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
+      }
+
+      SERIAL_ECHOLNPGM("M605 current mode: ", previous_mode);
+      SERIAL_ECHOLNPGM("M605 new mode: ", dual_x_carriage_mode);
+
+      if (dual_x_carriage_mode == previous_mode) {
+        SERIAL_ECHOLNPGM("M605: mode unchanged");
+        return;
+      }
 
       switch (dual_x_carriage_mode) {
-
         case DXC_FULL_CONTROL_MODE:
         case DXC_SINGLE_2:
-          #if ENABLED(RTS_AVAILABLE)
-            //SetExtruderMode(4, false);
-            // changed by John Carlson to allow for host to know that M605 is supposed to use single mode 2 but set mode back to full control
-            if (dual_x_carriage_mode == 0) {
-              dualXPrintingModeStatus = 0;
-              SERIAL_ECHOLNPGM("single mode1: ");
-            } else if  (dual_x_carriage_mode == 4) {
-              dualXPrintingModeStatus = 4;
-              SERIAL_ECHOLNPGM("single mode2: ");
-              save_dual_x_carriage_mode = dualXPrintingModeStatus;
-              //dual_x_carriage_mode = DXC_FULL_CONTROL_MODE;
-            }
-          #endif
-          break;
         case DXC_AUTO_PARK_MODE:
-          #if ENABLED(RTS_AVAILABLE)
-            //SetExtruderMode(1, false);
-            dualXPrintingModeStatus = 1;
-          #endif
+          // changed by John Carlson to allow for host to know that
+          // M605 is supposed to use single mode 2 but set mode back
+          // to full control
+          idex_set_mirrored_mode(false);
           break;
 
         case DXC_DUPLICATION_MODE:
+          idex_set_mirrored_mode(false);
           // Set the X offset, but no less than the safety gap
           if (parser.seenval('X')) duplicate_extruder_x_offset = _MAX(parser.value_linear_units(), (82) - (X1_MIN_POS));
           if (parser.seenval('R')) duplicate_extruder_temp_offset = parser.value_celsius_diff();
           // Always switch back to tool 0
           if (active_extruder != 0) tool_change(0);
-
-          #if ENABLED(RTS_AVAILABLE)
-            //SetExtruderMode(2, false);
-            dualXPrintingModeStatus = 2;
-          #endif
           break;
 
         case DXC_MIRRORED_MODE: {
           if (previous_mode != DXC_DUPLICATION_MODE) {
             SERIAL_ECHOLNPGM("Printer must be in DXC_DUPLICATION_MODE prior to ");
             SERIAL_ECHOLNPGM("specifying DXC_MIRRORED_MODE.");
-            dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
+            dual_x_carriage_mode = previous_mode;
             return;
           }
           idex_set_mirrored_mode(true);
@@ -132,20 +125,19 @@
             planner.buffer_line(dest, feedrate_mm_s, 0);
             dest.x += 0.1f;
           }
+        } break;
 
-          #if ENABLED(RTS_AVAILABLE)
-            //SetExtruderMode(3, false);
-            dualXPrintingModeStatus = 3;
-          #endif
-        } return;
-
-        default:
-          dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
-          dualXPrintingModeStatus = 1;
-          break;
+      default:
+        return;                 // Should not be possible
       }
 
-      save_dual_x_carriage_mode = dualXPrintingModeStatus;
+      dualXPrintingModeStatus = save_dual_x_carriage_mode =
+        dual_x_carriage_mode;
+#if ENABLED(RTS_AVAILABLE)
+      SetExtruderMode(dualXPrintingModeStatus, true);
+#endif
+      if (dual_x_carriage_mode == DXC_MIRRORED_MODE)
+        return;
 
       idex_set_parked(false);
       set_duplication_enabled(false);
@@ -154,11 +146,8 @@
         process_subcommands_now(F(EVENT_GCODE_IDEX_AFTER_MODECHANGE));
       #endif
     }
-    else if (!parser.seen('W'))  // if no S or W parameter, the DXC mode gets reset to the user's default
-      dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
 
     #ifdef DEBUG_DXC_MODE
-
       if (parser.seen('W')) {
         DEBUG_ECHO_START();
         DEBUG_ECHOPGM("Dual X Carriage Mode ");
@@ -167,6 +156,8 @@
           case DXC_AUTO_PARK_MODE:    DEBUG_ECHOPGM("AUTO_PARK");    break;
           case DXC_DUPLICATION_MODE:  DEBUG_ECHOPGM("DUPLICATION");  break;
           case DXC_MIRRORED_MODE:     DEBUG_ECHOPGM("MIRRORED");     break;
+          case DXC_SINGLE_2:          DEBUG_ECHOPGM("SINGLE_2");     break;
+          default:                    DEBUG_ECHOPGM("ERROR_INVALID_MODE"); break;
         }
         DEBUG_ECHOPGM("\nActive Ext: ", active_extruder);
         if (!active_extruder_parked) DEBUG_ECHOPGM(" NOT ");
