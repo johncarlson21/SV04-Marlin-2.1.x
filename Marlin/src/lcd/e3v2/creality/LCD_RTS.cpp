@@ -1,5 +1,5 @@
-#include "lcd_rts.h"
-#include <wstring.h>
+#include "LCD_RTS.h"
+#include <WString.h>
 #include <stdio.h>
 #include <string.h>
 #include <Arduino.h>
@@ -57,7 +57,7 @@ float ChangeFilament1Temp = 200;
 
 float current_position_x0_axis = X_MIN_POS;
 float current_position_x1_axis = X2_MAX_POS;
-int StartFlag = 0;   
+int StartFlag = 0;
 int PrintFlag = 0;
 
 int heatway = 0;
@@ -100,7 +100,7 @@ bool PoweroffContinue = false;
 char commandbuf[30];
 bool active_extruder_flag = false;
 
-static int change_page_number = 0; 
+static int change_page_number = 0;
 
 char save_dual_x_carriage_mode = 0;
 
@@ -172,8 +172,8 @@ void RTSSHOW::ShowFilesOnCardPage(int page) {
 
     RTS_SndData(shortFileName, buttonIndex);
 
-    if (!EndsWith(card.longest_filename(), "gcode") && !EndsWith(card.longest_filename(), "GCO") 
-        && !EndsWith(card.longest_filename(), "GCODE")) 
+    if (!EndsWith(card.longest_filename(), "gcode") && !EndsWith(card.longest_filename(), "GCO")
+        && !EndsWith(card.longest_filename(), "GCODE"))
     {
       //change color if dir
       RTS_SndData((unsigned long)0x0400, FilenameNature + (textIndex + 5) * 16);
@@ -329,7 +329,7 @@ void RTSSHOW::RTS_Init()
   active_extruder = active_extruder_font;
   #if ENABLED(DUAL_X_CARRIAGE)
     save_dual_x_carriage_mode = dualXPrintingModeStatus;
-    
+
     if(save_dual_x_carriage_mode == 1)
     {
       RTS_SndData(1, PRINT_MODE_ICON_VP);
@@ -350,7 +350,7 @@ void RTSSHOW::RTS_Init()
       RTS_SndData(5, PRINT_MODE_ICON_VP);
       RTS_SndData(5, SELECT_MODE_ICON_VP);
     }
-    else 
+    else
     {
       RTS_SndData(4, PRINT_MODE_ICON_VP);
       RTS_SndData(4, SELECT_MODE_ICON_VP);
@@ -506,7 +506,7 @@ int RTSSHOW::RTS_RecData()
 		}
 	}while(timeout < 50); /* 超时函数 */
 //	MYSERIAL0.write(0xBB);
-	
+
 	if(frame_flag == true){
 		recdat.head[0] = databuf[0];
 		recdat.head[1] = databuf[1];
@@ -520,9 +520,9 @@ int RTSSHOW::RTS_RecData()
 		return -1;
 	}
     // response for writing byte
-    if ((recdat.len == 0x03) && 
-		((recdat.command == 0x82) || (recdat.command == 0x80)) && 
-		(databuf[4] == 0x4F) && 
+    if ((recdat.len == 0x03) &&
+		((recdat.command == 0x82) || (recdat.command == 0x80)) &&
+		(databuf[4] == 0x4F) &&
 		(databuf[5] == 0x4B)){
 		memset(databuf, 0, sizeof(databuf));
 		recnum = 0;
@@ -865,7 +865,7 @@ void RTSSHOW::RTS_HandleData()
       {
         #if ENABLED(DUAL_X_CARRIAGE)
           save_dual_x_carriage_mode = dualXPrintingModeStatus;
-          
+
           SetExtruderMode(save_dual_x_carriage_mode, true);
 
           RTS_SndData(ExchangePageBase + 34, ExchangepageAddr);
@@ -1381,7 +1381,7 @@ void RTSSHOW::RTS_HandleData()
         AxisUnitMode = 4;
         axis_unit = 100.0;
         RTS_SndData(ExchangePageBase + 58, ExchangepageAddr);
-      } 
+      }
       else if(recdat.data[0] == 1)
       {
         AxisUnitMode = 3;
@@ -1523,7 +1523,7 @@ void RTSSHOW::RTS_HandleData()
       {
         RTS_SndData(ExchangePageBase + 1, ExchangepageAddr);
       }
-            else if (recdat.data[0] == 8) // switch to advanced settings page 
+            else if (recdat.data[0] == 8) // switch to advanced settings page
       {
         RTS_SndData(ExchangePageBase + 83, ExchangepageAddr);
       }
@@ -1531,11 +1531,11 @@ void RTSSHOW::RTS_HandleData()
 
     case ASettingsScreenKey:
       SERIAL_ECHOLNPGM("ASettings Button ID: ", recdat.data[0]);
-      if (recdat.data[0] == 1) // switch to e-steps page 
+      if (recdat.data[0] == 1) // switch to e-steps page
       {
         RTS_SndData(ExchangePageBase + 82, ExchangepageAddr);
       }
-      else if (recdat.data[0] == 2) // switch to flow settings page 
+      else if (recdat.data[0] == 2) // switch to flow settings page
       {
         RTS_SndData(ExchangePageBase + 84, ExchangepageAddr);
       }
@@ -1553,17 +1553,17 @@ void RTSSHOW::RTS_HandleData()
       SERIAL_ECHOLNPGM("PIDScreenkey Button ID: ", recdat.data[0]);
       RTS_SndData(ExchangePageBase + 86, ExchangepageAddr);
       RTS_SndData("                     ", PID_TEXT_OUT_VP);
-      if (recdat.data[0] == 1) // nozzle 1 page 
+      if (recdat.data[0] == 1) // nozzle 1 page
       {
         const heater_id_t hid = (heater_id_t)0;
         thermalManager.PID_autotune(200, hid, 5, 1);
       }
-      else if (recdat.data[0] == 2) // nozzle 2 page 
+      else if (recdat.data[0] == 2) // nozzle 2 page
       {
         const heater_id_t hid = (heater_id_t)1;
         thermalManager.PID_autotune(200, hid, 5, 1);
       }
-      else if (recdat.data[0] == 3) // bed page 
+      else if (recdat.data[0] == 3) // bed page
       {
         const heater_id_t hid = (heater_id_t)-1;
         thermalManager.PID_autotune(60, hid, 5, 1);
@@ -1743,7 +1743,7 @@ void RTSSHOW::RTS_HandleData()
       {
         // Assitant Level , Back Left 5
         if(!planner.has_blocks_queued())
-        {   
+        {
           waitway = 4;
           queue.enqueue_now_P(PSTR("G1 F600 Z3"));
           queue.enqueue_now_P(PSTR("G1 X30 Y275 F3000"));
@@ -1752,14 +1752,14 @@ void RTSSHOW::RTS_HandleData()
         }
       }
        else if (recdat.data[0] == 11)
-      { 
+      {
         waitway = 3;
         RTS_SndData(ExchangePageBase + 40, ExchangepageAddr);
         queue.enqueue_now_P(PSTR("G28 X"));
         queue.enqueue_now_P(PSTR("G34"));
         Update_Time_Value = 0;
         waitway = 0;
-      } 
+      }
       else if (recdat.data[0] == 12) {
         RTS_SndData(ExchangePageBase + 40, ExchangepageAddr);
         queue.enqueue_now_P(PSTR("G28 X"));
@@ -1866,7 +1866,7 @@ void RTSSHOW::RTS_HandleData()
         waitway = 0;
       }
       break;
-    
+
     case ZaxismoveKey:
       if(!planner.has_blocks_queued())
       {
@@ -2153,7 +2153,7 @@ void RTSSHOW::RTS_HandleData()
       {
         #if ENABLED(DUAL_X_CARRIAGE)
           save_dual_x_carriage_mode = dualXPrintingModeStatus;
-          
+
           switch(save_dual_x_carriage_mode)
           {
             case 1:
@@ -2244,8 +2244,8 @@ void RTSSHOW::RTS_HandleData()
         card.getAbsFilenameInCWD(fileInfo.currentFilePath);
         strcat(fileInfo.currentFilePath, card.filename);
 
-        if (!EndsWith(fileInfo.currentFilePath, "gcode") && !EndsWith(fileInfo.currentFilePath, "GCO") 
-        && !EndsWith(fileInfo.currentFilePath, "GCODE")) 
+        if (!EndsWith(fileInfo.currentFilePath, "gcode") && !EndsWith(fileInfo.currentFilePath, "GCO")
+        && !EndsWith(fileInfo.currentFilePath, "GCODE"))
         {
           card.cd(fileInfo.currentFilePath);
           InitCardList();
@@ -2278,11 +2278,11 @@ void RTSSHOW::RTS_HandleData()
       {
         if((0 != dualXPrintingModeStatus) && (4 != dualXPrintingModeStatus))
         {
-          RTS_SndData(dualXPrintingModeStatus, SELECT_MODE_ICON_VP);        
+          RTS_SndData(dualXPrintingModeStatus, SELECT_MODE_ICON_VP);
         }
         else if(4 == dualXPrintingModeStatus)
         {
-          RTS_SndData(5, SELECT_MODE_ICON_VP);  
+          RTS_SndData(5, SELECT_MODE_ICON_VP);
         }
         else
         {
@@ -2291,7 +2291,7 @@ void RTSSHOW::RTS_HandleData()
         RTS_SndData(fileInfo.currentDisplayFilename, PRINT_FILE_TEXT_VP);
         RTS_SndData(ExchangePageBase + 56, ExchangepageAddr);
       }
-      else if (recdat.data[0] == 2) 
+      else if (recdat.data[0] == 2)
       {
         //dir back
         card.cdup();
@@ -2324,7 +2324,7 @@ void RTSSHOW::RTS_HandleData()
 
         save_dual_x_carriage_mode = dualXPrintingModeStatus;
         SERIAL_ECHOLNPGM("dualXPrintingModeStatus: ", dualXPrintingModeStatus);
-        
+
         switch(save_dual_x_carriage_mode)
         {
           case 1:
@@ -2499,7 +2499,7 @@ void RTSSHOW::RTS_HandleData()
         RTS_SndData(change_page_number + ExchangePageBase, ExchangepageAddr);
         if((0 != dualXPrintingModeStatus) && (4 != dualXPrintingModeStatus))
         {
-          RTS_SndData(dualXPrintingModeStatus, PRINT_MODE_ICON_VP);        
+          RTS_SndData(dualXPrintingModeStatus, PRINT_MODE_ICON_VP);
         }
         else if(4 == dualXPrintingModeStatus)
         {
@@ -2515,7 +2515,7 @@ void RTSSHOW::RTS_HandleData()
         RTS_SndData(change_page_number + ExchangePageBase, ExchangepageAddr);
         if((0 != dualXPrintingModeStatus) && (4 != dualXPrintingModeStatus))
         {
-          RTS_SndData(dualXPrintingModeStatus, PRINT_MODE_ICON_VP);        
+          RTS_SndData(dualXPrintingModeStatus, PRINT_MODE_ICON_VP);
         }
         else if(4 == dualXPrintingModeStatus)
         {
@@ -2533,7 +2533,7 @@ void RTSSHOW::RTS_HandleData()
       }
       if((0 != dualXPrintingModeStatus) && (4 != dualXPrintingModeStatus))
       {
-        RTS_SndData(dualXPrintingModeStatus, SELECT_MODE_ICON_VP);        
+        RTS_SndData(dualXPrintingModeStatus, SELECT_MODE_ICON_VP);
       }
       else if(4 == dualXPrintingModeStatus)
       {
@@ -2789,7 +2789,7 @@ void EachMomentUpdate()
     }
     // moved z height output to make sure it is always up to date
     rtscheck.RTS_SndData(10 * current_position[Z_AXIS], AXIS_Z_COORD_VP);
-    
+
     next_rts_update_ms = ms + RTS_UPDATE_INTERVAL + Update_Time_Value;
   }
 }
@@ -2802,8 +2802,8 @@ void SetExtruderMode(unsigned int mode, bool isDirect) {
     mode = 4;
   }
   SERIAL_ECHOLNPGM("Select new extruder mode: ", mode);
-  if (mode == 1)
-  {
+  switch (mode) {
+  case 1:
     //dual mode
     rtscheck.RTS_SndData(1, TWO_COLOR_MODE_ICON_VP);
     rtscheck.RTS_SndData(0, COPY_MODE_ICON_VP);
@@ -2812,9 +2812,9 @@ void SetExtruderMode(unsigned int mode, bool isDirect) {
     dualXPrintingModeStatus = 1;
     rtscheck.RTS_SndData(1, PRINT_MODE_ICON_VP);
     rtscheck.RTS_SndData(1, SELECT_MODE_ICON_VP);
-  }
-  else if (mode == 2)
-  {
+    break;
+
+  case 2:
     //duplicate mode
     rtscheck.RTS_SndData(1, COPY_MODE_ICON_VP);
     rtscheck.RTS_SndData(0, TWO_COLOR_MODE_ICON_VP);
@@ -2823,9 +2823,9 @@ void SetExtruderMode(unsigned int mode, bool isDirect) {
     dualXPrintingModeStatus = 2;
     rtscheck.RTS_SndData(2, PRINT_MODE_ICON_VP);
     rtscheck.RTS_SndData(2, SELECT_MODE_ICON_VP);
-  }
-  else if (mode == 3)
-  {
+    break;
+
+  case 3:
     //mirror mode
     rtscheck.RTS_SndData(1, MIRROR_MODE_ICON_VP);
     rtscheck.RTS_SndData(0, TWO_COLOR_MODE_ICON_VP);
@@ -2834,9 +2834,10 @@ void SetExtruderMode(unsigned int mode, bool isDirect) {
     dualXPrintingModeStatus = 3;
     rtscheck.RTS_SndData(3, PRINT_MODE_ICON_VP);
     rtscheck.RTS_SndData(3, SELECT_MODE_ICON_VP);
-  }
-  else if (mode == 4)
-  {
+    break;
+
+  case 4:
+  default:
     //single 1 mode
     rtscheck.RTS_SndData(0, MIRROR_MODE_ICON_VP);
     rtscheck.RTS_SndData(0, TWO_COLOR_MODE_ICON_VP);
@@ -2845,9 +2846,9 @@ void SetExtruderMode(unsigned int mode, bool isDirect) {
     dualXPrintingModeStatus = 0;
     rtscheck.RTS_SndData(4, PRINT_MODE_ICON_VP);
     rtscheck.RTS_SndData(4, SELECT_MODE_ICON_VP);
-  }
-  else if (mode == 5)
-  {
+    break;
+
+  case 5:
     //single 2 mode
     rtscheck.RTS_SndData(0, MIRROR_MODE_ICON_VP);
     rtscheck.RTS_SndData(0, TWO_COLOR_MODE_ICON_VP);
@@ -2856,21 +2857,14 @@ void SetExtruderMode(unsigned int mode, bool isDirect) {
     dualXPrintingModeStatus = 4;
     rtscheck.RTS_SndData(5, PRINT_MODE_ICON_VP);
     rtscheck.RTS_SndData(5, SELECT_MODE_ICON_VP);
-  } else if (mode == 6)
-  {
+    break;
+
+  case 6:
     save_dual_x_carriage_mode = dualXPrintingModeStatus;
     //SERIAL_ECHOLNPGM("save_dual_x_carriage_mode: ", save_dual_x_carriage_mode);
     settings.save();
     rtscheck.RTS_SndData(ExchangePageBase + 1, ExchangepageAddr);
-  } else {
-    //single 1 mode
-    rtscheck.RTS_SndData(0, MIRROR_MODE_ICON_VP);
-    rtscheck.RTS_SndData(0, TWO_COLOR_MODE_ICON_VP);
-    rtscheck.RTS_SndData(0, COPY_MODE_ICON_VP);
-    rtscheck.RTS_SndData(1, SINGLE_MODE_ICON_VP);
-    dualXPrintingModeStatus = 0;
-    rtscheck.RTS_SndData(4, PRINT_MODE_ICON_VP);
-    rtscheck.RTS_SndData(4, SELECT_MODE_ICON_VP);
+    break;
   }
 }
 
@@ -2884,7 +2878,7 @@ void RTSUpdate()
 	card_insert_st = IS_SD_INSERTED() ;
 
 	if((card_insert_st == false) && (sd_printing == true)){
-		rtscheck.RTS_SndData(ExchangePageBase + 46, ExchangepageAddr);	
+		rtscheck.RTS_SndData(ExchangePageBase + 46, ExchangepageAddr);
 		rtscheck.RTS_SndData(0, CHANGE_SDCARD_ICON_VP);
 		/* 暂停打印，使得喷头可以回到零点 */
 		card.pauseSDPrint();
@@ -2900,7 +2894,7 @@ void RTSUpdate()
 		rtscheck.RTS_SndData((int)card_insert_st, CHANGE_SDCARD_ICON_VP);
 		last_card_insert_st = card_insert_st;
 	}
-  
+
   EachMomentUpdate();
   // wait to receive massage and response
   while(rtscheck.RTS_RecData() > 0)
@@ -2939,19 +2933,19 @@ void RTS_MoveAxisHoming()
     if(AxisUnitMode == 4)
     {
       rtscheck.RTS_SndData(ExchangePageBase + 58, ExchangepageAddr);
-    } 
+    }
     else if(AxisUnitMode == 3)
     {
       rtscheck.RTS_SndData(ExchangePageBase + 29, ExchangepageAddr);
-    } 
+    }
     else if(AxisUnitMode == 2)
     {
       rtscheck.RTS_SndData(ExchangePageBase + 30, ExchangepageAddr);
-    } 
+    }
     else if(AxisUnitMode == 1)
     {
       rtscheck.RTS_SndData(ExchangePageBase + 31, ExchangepageAddr);
-    } 
+    }
     waitway = 0;
   }
   else if(waitway == 6)

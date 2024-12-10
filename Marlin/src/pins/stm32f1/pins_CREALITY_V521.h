@@ -230,3 +230,11 @@
 #if HAS_DGUS_LCD
   #define LCD_SERIAL_PORT                      3
 #endif
+
+// Optional suicide pin based on Bjoern70's standard (connector J2, active low)
+#ifndef SUICIDE_PIN
+ #define SUICIDE_PIN                  PE4
+#endif
+#ifndef SUICIDE_PIN_STATE
+ #define SUICIDE_PIN_STATE            LOW
+#endif

@@ -579,12 +579,21 @@ void home_if_needed(const bool keeplev=false);
  */
 #if ENABLED(DUAL_X_CARRIAGE)
 
-  enum DualXMode : char {
+  enum DualXMode : uint8_t {
     DXC_FULL_CONTROL_MODE,
+    DXC_SINGLE_0 = DXC_FULL_CONTROL_MODE,
     DXC_AUTO_PARK_MODE,
+    DXC_DUAL_MODE = DXC_AUTO_PARK_MODE,
     DXC_DUPLICATION_MODE,
     DXC_MIRRORED_MODE,
-    DXC_SINGLE_2 // added by John Carlson for the issue with host not knowing about single mode 2
+    DXC_SINGLE_1,
+    DXC_SINGLE_2,
+    DXC_SINGLE_3,
+    DXC_SINGLE_4,
+    DXC_SINGLE_5,
+    DXC_SINGLE_6,
+    DXC_SINGLE_7,
+    DXC_MAX_MODE = DXC_SINGLE_1 + EXTRUDERS - 2
   };
 
   extern DualXMode dual_x_carriage_mode;
@@ -596,8 +605,68 @@ void home_if_needed(const bool keeplev=false);
   extern celsius_t duplicate_extruder_temp_offset;  // Used in mode 2 & 3
   extern bool idex_mirrored_mode;                   // Used in mode 3
 
-  FORCE_INLINE bool idex_is_duplicating() { return (dual_x_carriage_mode >= DXC_DUPLICATION_MODE and dual_x_carriage_mode <= DXC_MIRRORED_MODE); } // updated by John Carlson so that mode 4 doesn't throw the error
-   FORCE_INLINE bool dxc_is_parked() { return dual_x_carriage_mode >= DXC_AUTO_PARK_MODE; }
+  FORCE_INLINE bool idex_is_duplicating(uint8_t m) {
+    return m == DXC_DUPLICATION_MODE || m == DXC_MIRRORED_MODE;
+  }
+  FORCE_INLINE bool idex_is_duplicating() {
+    return idex_is_duplicating(dual_x_carriage_mode);
+  }
+  FORCE_INLINE bool dxc_is_parked(uint8_t m) {
+    return m > DXC_SINGLE_0 && m < DXC_SINGLE_1;
+  }
+  FORCE_INLINE bool dxc_is_parked() {
+    return dxc_is_parked(dual_x_carriage_mode);
+  }
+  FORCE_INLINE int8_t dxc_extruder_index(uint8_t m) {
+    switch (m) {
+    case DXC_SINGLE_0:
+      return 0;
+    case DXC_AUTO_PARK_MODE:
+    case DXC_DUPLICATION_MODE:
+    case DXC_MIRRORED_MODE:
+      return -1;                // All extruders
+    default:
+      return m - (DXC_SINGLE_1 - 1);
+    }
+  }
+  FORCE_INLINE int8_t dxc_extruder_index() {
+    return dxc_extruder_index(dual_x_carriage_mode);
+  }
+  FORCE_INLINE DualXMode dxc_single(uint8_t extruder) {
+    if (extruder)
+      return (DualXMode)(extruder + DXC_SINGLE_1 - 1);
+    else
+      return DXC_SINGLE_0;
+  }
+  FORCE_INLINE bool dxc_is_single(uint8_t m) {
+    switch (m) {
+    case DXC_AUTO_PARK_MODE:
+    case DXC_DUPLICATION_MODE:
+    case DXC_MIRRORED_MODE:
+      return false;                // All extruders
+    default:
+      return true;
+    }
+  }
+  FORCE_INLINE bool dxc_is_single() {
+    return dxc_is_single(dual_x_carriage_mode);
+  }
+  FORCE_INLINE uint8_t dxc_extruder_mask(uint8_t m) {
+    switch (m) {
+    case DXC_AUTO_PARK_MODE:
+    case DXC_DUPLICATION_MODE:
+    case DXC_MIRRORED_MODE:
+      return 0xff;                // All extruders
+    default:
+      m -= (DXC_SINGLE_1 - 1);
+      // fall through
+    case DXC_SINGLE_0:
+      return (uint8_t)1 << m;
+    }
+  }
+  FORCE_INLINE int8_t dxc_extruder_mask() {
+    return dxc_extruder_mask(dual_x_carriage_mode);
+  }
 
   float x_home_pos(const uint8_t extruder);
 

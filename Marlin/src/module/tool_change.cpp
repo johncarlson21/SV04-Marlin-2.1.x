@@ -844,11 +844,10 @@ void fast_line_to_current(const AxisEnum fr_axis) { _line_to_current(fr_axis, 0.
 
     DEBUG_ECHOPGM("Dual X Carriage Mode ");
     switch (dual_x_carriage_mode) {
-      case DXC_FULL_CONTROL_MODE: DEBUG_ECHOLNPGM("FULL_CONTROL"); break;
+      default: DEBUG_ECHOLNPGM("FULL_CONTROL E", dxc_extruder_index()); break;
       case DXC_AUTO_PARK_MODE:    DEBUG_ECHOLNPGM("AUTO_PARK");    break;
       case DXC_DUPLICATION_MODE:  DEBUG_ECHOLNPGM("DUPLICATION");  break;
       case DXC_MIRRORED_MODE:     DEBUG_ECHOLNPGM("MIRRORED");     break;
-      case DXC_SINGLE_2:          DEBUG_ECHOLNPGM("SINGLE MODE 2"); break;
     }
 
     // Get the home position of the currently-active tool

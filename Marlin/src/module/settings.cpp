@@ -2634,17 +2634,13 @@ void MarlinSettings::postprocess() {
       }
       #endif
 
-      if((dualXPrintingModeStatus != 0) && (dualXPrintingModeStatus != 1) && (dualXPrintingModeStatus != 2) && (dualXPrintingModeStatus != 3) && (dualXPrintingModeStatus != 4))
-      {
-        dualXPrintingModeStatus = 0;
-      }
       EEPROM_READ(dualXPrintingModeStatus);
+      if (dualXPrintingModeStatus > DXC_MAX_MODE)
+        dualXPrintingModeStatus = DEFAULT_DUAL_X_CARRIAGE_MODE;
 
-      if((active_extruder_font != 0) && (active_extruder_font != 1))
-      {
-        active_extruder_font = 0;
-      }
       EEPROM_READ(active_extruder_font);
+      if (active_extruder_font > 1)
+        active_extruder_font = 0;
 
       //
       // Model predictive control

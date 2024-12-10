@@ -119,38 +119,29 @@ class TFilamentMonitor : public FilamentMonitorBase {
         TERN_(HAS_FILAMENT_RUNOUT_DISTANCE, cli()); // Prevent RunoutResponseDelayed::block_completed from accumulating here
         response.run();
         sensor.run();
-        const uint8_t runout_flags = response.has_run_out();
+        uint8_t runout_flags = response.has_run_out();
         TERN_(HAS_FILAMENT_RUNOUT_DISTANCE, sei());
         #if MULTI_FILAMENT_SENSOR
-          #if ENABLED(WATCH_ALL_RUNOUT_SENSORS)
-            const bool ran_out = !!runout_flags;  // any sensor triggers
-            uint8_t extruder = 0;
+          #if !ENABLED(WATCH_ALL_RUNOUT_SENSORS)
+            runout_flags &= dxc_extruder_mask();
+          #endif
+
+          const bool ran_out = !!runout_flags;  // any sensor triggers
+          uint8_t extruder = 0;
+          #if defined(__GNUC__) || defined(__CC_ARM)
+            extruder = __builtin_ctz(runout_flags) & 7;
+          #else
             if (ran_out) {
-              uint8_t bitmask = runout_flags;
-              while (!(bitmask & 1)) {
-                bitmask >>= 1;
+              uint8_t bit = 1;
+              while (!(runout_flags & bit)) {
                 extruder++;
+                bit <<= 1;
               }
             }
-          #else
-            //SERIAL_ECHOLNPGM("Active extruder: ", active_extruder);
-            //SERIAL_ECHOLNPGM("dualXPrintingModeStatus: ", dualXPrintingModeStatus);
-            uint8_t test_extruder = active_extruder;
-            if (dualXPrintingModeStatus == 4)
-            {
-              //SERIAL_ECHOLNPGM("setting test extruder to 1");
-              test_extruder = 1;
-            }
-            
-            const bool ran_out = TEST(runout_flags, test_extruder);  // suppress non active extruders
-            //SERIAL_ECHOLNPGM("test runout on extruder ", test_extruder);
-            //SERIAL_ECHOLNPGM("ran_out: ", ran_out);
-
-            uint8_t extruder = active_extruder;
           #endif
         #else
           const bool ran_out = !!runout_flags;
-          uint8_t extruder = active_extruder;
+          const uint8_t extruder = active_extruder;
         #endif
 
         #if ENABLED(FILAMENT_RUNOUT_SENSOR_DEBUG)

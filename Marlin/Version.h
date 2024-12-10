@@ -28,7 +28,7 @@
 /**
  * Marlin release version identifier
  */
-//#define SHORT_BUILD_VERSION "bugfix-2.1.x"
+#define SHORT_BUILD_VERSION "hpa-2024.06.28"
 
 /**
  * Verbose version identifier which should contain a reference to the location
