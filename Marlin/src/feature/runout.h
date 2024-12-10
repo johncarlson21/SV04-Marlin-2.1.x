@@ -123,25 +123,25 @@ class TFilamentMonitor : public FilamentMonitorBase {
         TERN_(HAS_FILAMENT_RUNOUT_DISTANCE, sei());
         #if MULTI_FILAMENT_SENSOR
           #if !ENABLED(WATCH_ALL_RUNOUT_SENSORS)
-            switch (dualXPrintingModeStatus) {
-              case 0:  runout_flags &= 1 << 0; break;
-              case 4:  runout_flags &= 1 << 1; break;
-              default: break;
-            }
+            runout_flags &= dxc_extruder_mask();
           #endif
 
           const bool ran_out = !!runout_flags;  // any sensor triggers
           uint8_t extruder = 0;
-          if (ran_out) {
-            uint8_t bit = 1;
-            while (!(runout_flags & bit)) {
-              extruder++;
-              bit <<= 1;
+          #if defined(__GNUC__) || defined(__CC_ARM)
+            extruder = __builtin_ctz(runout_flags) & 7;
+          #else
+            if (ran_out) {
+              uint8_t bit = 1;
+              while (!(runout_flags & bit)) {
+                extruder++;
+                bit <<= 1;
+              }
             }
-          }
+          #endif
         #else
           const bool ran_out = !!runout_flags;
-          uint8_t extruder = active_extruder;
+          const uint8_t extruder = active_extruder;
         #endif
 
         #if ENABLED(FILAMENT_RUNOUT_SENSOR_DEBUG)

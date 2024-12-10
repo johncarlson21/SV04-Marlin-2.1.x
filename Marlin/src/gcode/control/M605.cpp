@@ -44,28 +44,34 @@
   /**
    * M605: Set dual x-carriage movement mode
    *
-   *   M605 S0 : (FULL_CONTROL) The slicer has full control over both X-carriages and can achieve optimal travel
+   *   M605 S0 E H : (FULL_CONTROL) The slicer has full control over both X-carriages and can achieve optimal travel
    *             results as long as it supports dual X-carriages.
+   *             If E is specified, indicate that only that one
+   *             extruder is intended to be used, e.g. for runout
+   *             detection.
    *
-   *   M605 S1 : (AUTO_PARK) The firmware automatically parks and unparks the X-carriages on tool-change so that
+   *   M605 S1 H : (AUTO_PARK) The firmware automatically parks and unparks the X-carriages on tool-change so that
    *             additional slicer support is not required.
    *
-   *   M605 S2 X R : (DUPLICATION) The firmware moves the second X-carriage and extruder in synchronization with
+   *   M605 S2 X R H : (DUPLICATION) The firmware moves the second X-carriage and extruder in synchronization with
    *             the first X-carriage and extruder, to print 2 copies of the same object at the same time.
    *             Set the constant X-offset and temperature differential with M605 S2 X[offs] R[deg] and
    *             follow with "M605 S2" to initiate duplicated movement. For example, use "M605 S2 X100 R2" to
    *             make a copy 100mm to the right with E1 2° hotter than E0.
    *
-   *   M605 S3 : (MIRRORED) Formbot/Vivedino-inspired mirrored mode in which the second extruder duplicates
+   *   M605 S3 H : (MIRRORED) Formbot/Vivedino-inspired mirrored mode in which the second extruder duplicates
    *             the movement of the first except the second extruder is reversed in the X axis.
    *             The temperature differential and initial X offset must be set with "M605 S2 X[offs] R[deg]",
    *             then followed by "M605 S3" to initiate mirrored movement.
    *
-   *   M605 S4 : (FULL_CONTROL) (Single Mode 2 for Sovol SV04) This is for host control so the code will know it has to use the single mode 2
+   *   M605 S4 H : (FULL_CONTROL) (Single Mode 2 for Sovol SV04)
+   *             Equivalent to M605 S0 E1
    *
    *    M605 W  : IDEX What? command.
    *
    *    Note: the X axis should be homed after changing Dual X-carriage mode.
+   *
+   * If the H flag is enabled, update the user-visible mode on the host.
    */
   void GcodeSuite::M605() {
     planner.synchronize();
@@ -78,27 +84,40 @@
       else
         dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
 
-      if (dual_x_carriage_mode > DXC_SINGLE_2) {
-        SERIAL_ERROR_MSG("M605 out of range S<0-4>");
+      if (dual_x_carriage_mode > DXC_SINGLE_1) {
+        SERIAL_ECHOLNPGM("M605 out of range S0-", DXC_MAX_MODE);
         dual_x_carriage_mode = DEFAULT_DUAL_X_CARRIAGE_MODE;
       }
 
       SERIAL_ECHOLNPGM("M605 current mode: ", previous_mode);
       SERIAL_ECHOLNPGM("M605 new mode: ", dual_x_carriage_mode);
 
-      if (dual_x_carriage_mode == previous_mode) {
-        SERIAL_ECHOLNPGM("M605: mode unchanged");
-        return;
-      }
+      uint8_t extruder = 0;
+      bool with_extruder = false;
 
       switch (dual_x_carriage_mode) {
-        case DXC_FULL_CONTROL_MODE:
-        case DXC_SINGLE_2:
         case DXC_AUTO_PARK_MODE:
-          // changed by John Carlson to allow for host to know that
-          // M605 is supposed to use single mode 2 but set mode back
-          // to full control
           idex_set_mirrored_mode(false);
+          break;
+
+        case DXC_SINGLE_1:        // S4 -> S0 E1 (backwards compat)
+          extruder = 1;
+          with_extruder = true;
+          // fall through
+
+        case DXC_FULL_CONTROL_MODE:
+          if (parser.seenval('E')) {
+            extruder = parser.value_byte();
+            with_extruder = true;
+          }
+          if (extruder >= EXTRUDERS) {
+            SERIAL_ECHOLNPGM("M605: Extruder index out of range");
+            extruder = 0;
+          }
+          dual_x_carriage_mode = dxc_single(extruder);
+          idex_set_mirrored_mode(false);
+          if (with_extruder && active_extruder != extruder)
+            tool_change(extruder);
           break;
 
         case DXC_DUPLICATION_MODE:
@@ -127,14 +146,15 @@
           }
         } break;
 
-      default:
-        return;                 // Should not be possible
+        default:
+          break;                // Cannot happen
       }
 
       dualXPrintingModeStatus = save_dual_x_carriage_mode =
         dual_x_carriage_mode;
 #if ENABLED(RTS_AVAILABLE)
-      SetExtruderMode(dualXPrintingModeStatus, true);
+      if (parser.boolval('H'))
+	SetExtruderMode(dualXPrintingModeStatus, true);
 #endif
       if (dual_x_carriage_mode == DXC_MIRRORED_MODE)
         return;
@@ -152,7 +172,7 @@
         DEBUG_ECHO_START();
         DEBUG_ECHOPGM("Dual X Carriage Mode ");
         switch (dual_x_carriage_mode) {
-          case DXC_FULL_CONTROL_MODE: DEBUG_ECHOPGM("FULL_CONTROL"); break;
+          default: DEBUG_ECHOPGM("FULL_CONTROL E", dxc_extruder_index()); break;
           case DXC_AUTO_PARK_MODE:    DEBUG_ECHOPGM("AUTO_PARK");    break;
           case DXC_DUPLICATION_MODE:  DEBUG_ECHOPGM("DUPLICATION");  break;
           case DXC_MIRRORED_MODE:     DEBUG_ECHOPGM("MIRRORED");     break;

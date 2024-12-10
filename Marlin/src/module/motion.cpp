@@ -1338,11 +1338,6 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
   inline bool dual_x_carriage_unpark() {
     if (active_extruder_parked) {
       switch (dual_x_carriage_mode) {
-
-        case DXC_SINGLE_2:
-        case DXC_FULL_CONTROL_MODE: 
-          break;
-
         case DXC_AUTO_PARK_MODE: {
           if (current_position.e == destination.e) {
             // This is a travel move (with no extrusion)
@@ -1404,6 +1399,9 @@ FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
             if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("set_duplication_enabled(true)\nidex_set_parked(false)");
           }
           else if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("Active extruder not 0");
+          break;
+
+        default:
           break;
       }
     }

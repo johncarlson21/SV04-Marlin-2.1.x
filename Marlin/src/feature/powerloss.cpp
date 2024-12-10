@@ -501,7 +501,7 @@ void PrintJobRecovery::resume() {
     }
   #endif
 
-  if((dualXPrintingModeStatus == 0) || (dualXPrintingModeStatus == 4)) 
+  if (dxc_is_single(dualXPrintingModeStatus))
   {
       sprintf_P(cmd, PSTR("T%i"), info.active_extruder);
       gcode.process_subcommands_now(cmd);
