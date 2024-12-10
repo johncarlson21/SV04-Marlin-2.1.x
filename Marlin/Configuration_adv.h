@@ -780,8 +780,8 @@
 #if ENABLED(DUAL_X_CARRIAGE)
   #define X1_MIN_POS X_MIN_POS    // Set to X_MIN_POS
   #define X1_MAX_POS X_BED_SIZE   // A max coordinate so the X1 carriage can't hit the parked X2 carriage
-  #define X2_MIN_POS     0        // A min coordinate so the X2 carriage can't hit the parked X1 carriage
-  #define X2_MAX_POS   362        // The max position of the X2 carriage, typically also the home position
+  #define X2_MIN_POS     2        // A min coordinate so the X2 carriage can't hit the parked X1 carriage
+  #define X2_MAX_POS   365        // The max position of the X2 carriage, typically also the home position
   #define X2_HOME_DIR    1        // Set to 1. The X2 carriage always homes to the max endstop position
   #define X2_HOME_POS X2_MAX_POS  // Default X2 home position. Set to X2_MAX_POS.
                                   // NOTE: For Dual X Carriage use M218 T1 Xn to override the X2_HOME_POS.
@@ -792,10 +792,10 @@
   #define DEFAULT_DUAL_X_CARRIAGE_MODE DXC_AUTO_PARK_MODE
 
   // Default x offset in duplication mode (typically set to half print bed width)
-  #define DEFAULT_DUPLICATION_X_OFFSET 150
+  #define DEFAULT_DUPLICATION_X_OFFSET 151
 
   // Default action to execute following M605 mode change commands. Typically G28X to apply new mode.
-  //#define EVENT_GCODE_IDEX_AFTER_MODECHANGE "G28X"
+  #define EVENT_GCODE_IDEX_AFTER_MODECHANGE "G28X"
 #endif
 
 /**
@@ -889,7 +889,9 @@
 //#define HOMING_BACKOFF_POST_MM { 2, 2, 2 }  // (linear=mm, rotational=°) Backoff from endstops after homing
 //#define XY_COUNTERPART_BACKOFF_MM 0         // (mm) Backoff X after homing Y, and vice-versa
 
-#define QUICK_HOME                          // If G28 contains XY do a diagonal move first
+// WARNING: Enabling QUICK_HOME seems to break homing both extruders!
+// This can cause extruder collision - very bad im need!!
+//#define QUICK_HOME                          // If G28 contains XY do a diagonal move first
 //#define HOME_Y_BEFORE_X                     // If G28 contains XY home Y before X
 //#define HOME_Z_FIRST                        // Home Z first. Requires a Z-MIN endstop (not a probe).
 //#define CODEPENDENT_XY_HOMING               // If X/Y can't home without homing Y/X first
